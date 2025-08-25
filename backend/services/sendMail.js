@@ -16,13 +16,13 @@ async function sendMail(){
                 user:'atul.makwana4321@gmail.com',
                 clientId:process.env.CLIENT_ID,
                 clientSecret:process.env.CLIENT_SECRET,
-                refreshToken:process.env.REFRESH_TOKEN,
+                // refreshToken:process.env.REFRESH_TOKEN,
                 accessToken:accessToken
             }
         })
         const mailOptions={
             from:'Atul4321<atul.makwana4321@gmail.com>',
-            to:'atulmakwana450@gmail.com',
+            to:'atulmakwana4500@gmail.com',
             subject:"InterviewPlatform",
             text:"Join Link",
             html:'<h1>Join Link </h1>'

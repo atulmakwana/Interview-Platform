@@ -6,16 +6,17 @@ import { useNavigate } from "react-router-dom";
 
 function Login() {
   const {setLogin} = useContext(Webrtccontext);
-  const navigate = useNavigate()
+  const navigate = useNavigate();
+  console.log("In Login.jSX");
   const loginWithGoogle = (ev) => {
     ev.preventDefault();
-    localStorage.setItem('loggedIn', true)
+    sessionStorage.setItem('loggedIn', true)
     setLogin(true);
     window.open("http://localhost:3006/auth/google", "_self");
     // window.open("https://interviewplatformbackend.onrender.com/auth/google", "_self");
   };
   useEffect(() => {
-    if(localStorage.getItem('loggedIn')) {
+    if(sessionStorage.getItem('loggedIn')) {
       navigate('/')
     }
   }, [])

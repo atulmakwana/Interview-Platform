@@ -1,5 +1,4 @@
-import React, { useState } from "react";
-import { useRef, useEffect, useContext } from "react";
+import React, { useState, useEffect, useRef, useContext } from "react";
 import axios from "axios";
 import "./codeIDE.css";
 import PlayCircleOutlineOutlinedIcon from "@mui/icons-material/PlayCircleOutlineOutlined";
@@ -11,79 +10,107 @@ import "codemirror/addon/edit/closetag";
 import "codemirror/addon/edit/closebrackets";
 import Webrtccontext from "../../context/webrtc/Webrtccontext";
 import { useNavigate } from "react-router-dom";
+
 const CodeIDE = () => {
   const editorRef = useRef(null);
-  const code = useRef("");
   const input = useRef("");
-  const output = useRef("");
-  const [language, setLanguage] = useState("c++");
   const { socket, otherUser } = useContext(Webrtccontext);
   const navigate = useNavigate();
+
+  const [language, setLanguage] = useState("c++");
+  const [outputText, setOutputText] = useState("");
+
+  // Redirect to login if not logged in
   useEffect(() => {
-    if (!localStorage.getItem('loggedIn')) {
+    if (!sessionStorage.getItem("loggedIn")) {
       navigate("/login", { replace: true });
       return;
     }
-    async function init() {
-      editorRef.current = Codemirror.fromTextArea(
+
+    // Initialize CodeMirror
+    function initEditor() {
+      const editor = Codemirror.fromTextArea(
         document.getElementById("realtimeEditor"),
         {
-          mode: { name: "javascript", json: true },
+          mode: { name: "javascript", json: true }, // You may enhance this later based on `language`
           theme: "dracula",
-          autoClosetags: true,
-          autoClodeBrackets: true,
+          autoCloseTags: true,
+          autoCloseBrackets: true,
           lineNumbers: true,
         }
       );
-      editorRef.current.setSize("100%", "100%");
-      editorRef.current.on("change", (instance, changes) => {
-        console.log("changes", changes);
+
+      editor.setSize("100%", "100%");
+      editorRef.current = editor;
+
+      editor.on("change", (instance, changes) => {
         const { origin } = changes;
-        const code = instance.getValue();
-        console.log(code);
-        if (origin !== "setValue") {
+        const updatedCode = instance.getValue();
+        if (origin !== "setValue" && socket?.current) {
           socket.current.emit("code-change", {
-            code,
+            code: updatedCode,
             otherUser,
           });
         }
       });
     }
-    init();
+
+    initEditor();
   }, []);
 
+  // Listen for remote code updates
   useEffect(() => {
+    const handleCodeChange = ({ code }) => {
+      if (code && editorRef.current) {
+        editorRef.current.setValue(code);
+      }
+    };
+
     if (socket.current) {
-      socket.current.on("code-change", (code) => {
-        console.log(code);
-        if (code !== null) {
-          editorRef.current.setValue(code);
-        }
-      });
+      socket.current.on("code-change", handleCodeChange);
     }
-  }, [socket.current]);
+
+    return () => {
+      if (socket.current) {
+        socket.current.off("code-change", handleCodeChange);
+      }
+    };
+  }, [socket]);
 
   const setlang = (e) => {
-    console.log(e);
     setLanguage(e.target.value);
   };
 
   const codesubmit = async (e) => {
     e.preventDefault();
     const detail = {
-      code: code.current.value,
+      code: editorRef.current.getValue(),
       language: language,
       input: input.current.value,
     };
     try {
-      const res = await axios.post("https://api.codex.jaagrav.in/", detail);
-      console.log(res.data);
-      output.current.value = res.data.output;
-      if(res.data.error){
-        output.current.value=res.data.error
-      }
+      const res = await fetch('https://judge0-ce.p.rapidapi.com/submissions?base64_encoded=false&wait=true', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-RapidAPI-Key': '0feda8bc37msh32e849b04b6bc6bp18b92ejsn14957b016d79',
+          'X-RapidAPI-Host': 'judge0-ce.p.rapidapi.com',
+        },
+        body: JSON.stringify({
+          source_code: editorRef.current.getValue(),
+          language_id: 63,       // e.g. Python 3
+          stdin: input.current.value,
+          // optional time_limit, memory_limit
+        }),
+      });
+      console.log(res)
+      const result = await res.json();
+      // result.stdout, result.stderr, result.time, result.exit_code, etc.
+
+      setOutputText(res.data.output || res.data.error || "No output");
     } catch (error) {
-      console.log(error);
+      console.error(error);
+      setOutputText("Error during execution.");
     }
   };
 
@@ -92,42 +119,41 @@ const CodeIDE = () => {
       <form className="d-flex flex-column flex-fill" onSubmit={codesubmit}>
         <div
           className="d-flex flex-fill rounded-3 p-1"
-          style={{ backgroundColor: "#272935", height: '860px', width: '1340px'}}
+          style={{ backgroundColor: "#272935", height: "860px", width: "1340px" }}
         >
-          <textarea
-            className="h-75 border border-white"
-            id="realtimeEditor"
-            ref={code}
-          />
+          <textarea className="h-75 border border-white" id="realtimeEditor" />
         </div>
+
         <div className="d-flex justify-content-center mt-4 mb-2">
           <select
             className="font-size px-4 py-2 mx-2 btn btn-secondary text-white"
             onChange={setlang}
+            value={language}
           >
-            <option>cpp</option>
-            <option>java</option>
-            <option>py</option>
-            <option>js</option>
-            <option>c</option>
-            <option>go</option>
-            <option>cs</option>
+            <option value="cpp">cpp</option>
+            <option value="java">java</option>
+            <option value="py">py</option>
+            <option value="js">js</option>
+            <option value="c">c</option>
+            <option value="go">go</option>
+            <option value="cs">cs</option>
           </select>
           <button className="mx-2 px-4 btn btn-dark" type="submit">
             <PlayCircleOutlineOutlinedIcon fontSize="large" />
           </button>
         </div>
       </form>
-      <div className="d-flex flex-column ms-4 mt-2 me-3" style={{width: '350px'}}>
+
+      <div className="d-flex flex-column ms-4 mt-2 me-3" style={{ width: "350px" }}>
         <h5>Input:</h5>
         <textarea className="w-100 h-30 mt-1" rows="4" cols="25" ref={input} />
         <h5 className="mt-4">Output:</h5>
         <textarea
-          value={output.current.value}
+          value={outputText}
           className="w-100 h-30 mt-1"
           cols="25"
-          rows="5" readOnly
-          ref={output}
+          rows="5"
+          readOnly
         />
       </div>
     </div>

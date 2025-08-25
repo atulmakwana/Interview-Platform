@@ -6,7 +6,7 @@ import "./whiteboard.css";
 const Whiteboard = () => {
   const navigate = useNavigate();
   useEffect(() => {
-    if (!localStorage.getItem('loggedIn')) {
+    if (!sessionStorage.getItem('loggedIn')) {
       navigate("/login", { replace: true });
       return;
     }

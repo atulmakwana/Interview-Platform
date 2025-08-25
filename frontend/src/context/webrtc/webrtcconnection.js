@@ -32,8 +32,11 @@ const Webrtcconnection = ({ children }) => {
     navigator.mediaDevices
       .getUserMedia({ video: video, audio: audio })
       .then((currentStream) => {
+        console.log("MyVideooo: ",myVideo)
         setStream(currentStream);
-        myVideo.current.srcObject = currentStream;
+        if (myVideo.current) {
+          myVideo.current.srcObject = currentStream;
+        }
       })
       .catch((ex) => {
         console.log(ex);
@@ -77,14 +80,14 @@ const Webrtcconnection = ({ children }) => {
         toast.error("Socket connection failed, try again later.");
       }
       socket.current.on("me", (id) => setMe(id));
-      console.log(me);
+      console.log("on me: ",me);
       socket.current.on("callUser", ({ from, name, signal }) => {
         audio.play();
         name = JSON.parse(name);
         setCall({ isReceivingCall: true, from, name, signal });
       });
       socket.current.on("recieve_message", (data) => {
-        console.log(data);
+        console.log("on data: ",data);
         setrecivemessage(data.message);
       });
     };
@@ -98,13 +101,14 @@ const Webrtcconnection = ({ children }) => {
   }, [video])
 
   const callUser = (id) => {
-    const peer = new Peer({ initiator: true, trickle: false, stream });
-    const user = JSON.parse(localStorage.getItem("user"));
-    const calleruser = {
-      name: user.name,
-    };
-    console.log(calleruser);
     setOtherUser(id);
+    const peer = new Peer({ initiator: true, trickle: false, stream });
+    const user = JSON.parse(sessionStorage.getItem("user")).user;
+    console.log("USERRR webrtc: ",user);
+    console.log(id);
+    console.log(peer);
+    const calleruser = { name: user?.name || "Someone" };
+    console.log(calleruser);
     let localstream;
     const peer1 = new Peer({ initiator: true, trickle: false, stream });
     peer1.on("signal", (data) => {
@@ -152,7 +156,7 @@ const Webrtcconnection = ({ children }) => {
   //    })
   // }
   const sendMessage = () => {
-    console.log("runn");
+    console.log("runn sendMessage");
     socket.current.emit("send_message", { message, otherUser });
   };
   const leaveCall = () => {

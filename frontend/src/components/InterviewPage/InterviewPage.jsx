@@ -20,7 +20,7 @@ const InterviewPage = (props) => {
   const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
   useEffect(() => {
-    if (!localStorage.getItem("loggedIn")) {
+    if (!sessionStorage.getItem("loggedIn")) {
       navigate("/login", { replace: true });
     }
     async function checkLoginStatus() {

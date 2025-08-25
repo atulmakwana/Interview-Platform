@@ -12,10 +12,22 @@ const cors=require("cors")
 
 const makeSocketConnection=require("./routes/socket")
 require('./passport');
-const io=require("socket.io")(server);
 
 connectToMongoAtlas()
-makeSocketConnection({io})();
+
+// const io=require("socket.io")(server);
+// makeSocketConnection({io})();
+const { Server } = require("socket.io");
+const io = new Server(server, {
+  cors: {
+    origin: "*", // or exact frontend origin like "http://localhost:5173"
+    methods: ["GET", "POST"],
+  },
+});
+
+makeSocketConnection({ io })();
+
+
 app.get("/",(req,res)=>{
     res.send("running");
 })

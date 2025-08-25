@@ -8,7 +8,7 @@ const Home = () => {
   const navigate = useNavigate();
   const { setLogin, callAccepted } = useContext(Webrtccontext);
   useEffect(() => {
-    if (!localStorage.getItem("loggedIn")) {
+    if (!sessionStorage.getItem("loggedIn")) {
       navigate("/login", { replace: true });
     } else {
       setLogin(true);

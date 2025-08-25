@@ -6,14 +6,15 @@ import { ToastContainer, toast } from "react-toastify";
 
 function Main() {
   const [email, setEmail] = useState("");
+  const [role, setRole] = useState("interviewee");
   const navigate = useNavigate();
   const { me, isLogin } = useContext(Webrtccontext);
   const generateMeetingCode = () => {
     return Math.floor(100000 + Math.random() * 900000);
   };
   const sendLink = async () => {
-    const userEmail = JSON.parse(localStorage.getItem("user")).email;
-    console.log(userEmail);
+    const userEmail = JSON.parse(sessionStorage.getItem("user")).user.email;
+    console.log(userEmail); 
     console.log(`-------------\n\n${me}\n\n-----------`)
     try {
       const response = await fetch(`http://localhost:3006/api/email/send`, {
@@ -21,7 +22,7 @@ function Main() {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          authtoken: localStorage.getItem("token"),
+          authtoken: sessionStorage.getItem("token"),
         },
         body: JSON.stringify({
           from: `${userEmail}`,
@@ -31,49 +32,78 @@ function Main() {
           message: `Join Interview Using this link http://localhost:3000/InterviewPage/${generateMeetingCode()}`,
         }),
       });
-    } catch (error) {
-      console.log(error);
-    }
+      if (!response.ok) {  
+        setEmail(""); 
+        toast.error(response.error || "Invalid email");
+        return false;
+      }
+      return true; 
+      } 
+      catch (error) {
+        console.log(error);
+      }
   };
   const handleClick = async (e) => {
-    if (e.target.innerText == "Create meeting") {
-      await sendLink();
-      toast(
-        <div style={{ display: "flex", justifyContent: "space-around" }}>
-          <p>Wait till Interviewee gives call</p>
-        </div>
-      )
+    if (e.target.innerText === "Create meeting") {
+      const success = await sendLink();
+      if (success) {
+        toast(
+          <div style={{ display: "flex", justifyContent: "space-around" }}>
+            <p>Wait till Interviewee gives call</p>
+          </div>
+        );
+      }
     } else {
       navigate(`/InterviewPage/${email}`);
     }
   };
   useEffect(() => {
-    if (!localStorage.getItem('loggedIn')) {
+    if (!sessionStorage.getItem('loggedIn')) {
+      console.log("Navigate to login")
       navigate("/login", { replace: true });
     }
     else {
       (async () => {
-        const request = await fetch("http://localhost:3006/auth/login/success", {
-          // const request = await fetch("https://interviewplatformbackend.onrender.com/auth/login/success", {
-          method: "GET",
-          credentials: "include",
-          headers: {
-            Accept: "application/json",
-            "Content-Type": "application/json",
-            "Access-Control-Allow-Credentials": true,
-          },
-        });
-        const res = await request.json();
-        if (request.status == 200) {
-          console.log(res.user.AUTHTOKEN);
-          console.log(localStorage.getItem("loggedIn"));
-          localStorage.setItem("token", res.user.AUTHTOKEN);
-          localStorage.setItem("user", JSON.stringify(res.user.user));
-        }
+        try {
+          console.log("Mainjsx fetching : ");
+          const request = await fetch("http://localhost:3006/auth/login/success", {
+            // const request = await fetch("https://interviewplatformbackend.onrender.com/auth/login/success", {
+            method: "GET",
+            credentials: "include",
+            headers: {
+              Accept: "application/json",
+              // "Content-Type": "application/json",
+              "Access-Control-Allow-Credentials": true,
+            },
+          });
+          // Check if status is not 200
+          if (request.status !== 200) {
+            console.warn("User not authenticated. Redirecting to login.");
+            sessionStorage.removeItem("token");
+            sessionStorage.removeItem("user");
+            sessionStorage.removeItem("loggedIn");
+            navigate("/login", { replace: true });
+            return;
+          }
+          const res = await request.json();
+          console.log("Mainjsx after calling login : ",res);
+          if (request.status == 200) {
+            console.log("MAIN.JSX: res.user.AUTHTOKEN: ",res.user);
+            console.log("MAIN.JSX sessionStorage.getItem(loggedIn): ",sessionStorage.getItem("loggedIn"));
+            sessionStorage.setItem("token", res.user.AUTHTOKEN);
+            sessionStorage.setItem("user", JSON.stringify(res.user));
+          }
+        } catch (error) {
+        console.error("Error during auth check:", error);
+        sessionStorage.removeItem("token");
+        sessionStorage.removeItem("user");
+        sessionStorage.removeItem("loggedIn");
+        navigate("/login", { replace: true });
+      }
       })();
     }
   }, []);
-  const [role, setRole] = useState("interviewee");
+  
   return (
     <div className="d-flex vh-100 vw-100 align-items-center text-dark ps-5">
       <div className="d-flex align-items-start text-container flex-column flex-fill ps-5">
@@ -109,6 +139,7 @@ function Main() {
           <input
             className="my-1 p-2"
             type="text"
+            value={email}
             placeholder={role == "interviewer" ? "Email Id" : "Meeting Id"}
             onChange={(e)=>{setEmail(e.target.value)}}
           />
