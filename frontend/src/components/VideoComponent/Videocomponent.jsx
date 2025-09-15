@@ -6,6 +6,7 @@ import Videocomponent2 from "./videocomponent2";
 const Videocomponent = () => {
   const {myVideo, stream, callAccepted, video} = useContext(Webrtccontext);
   console.log("video",video);
+  
   return (
     <>
       {callAccepted && <div className="d-flex flex-column justify-content-center" style={{width: "180.7vh"}}>

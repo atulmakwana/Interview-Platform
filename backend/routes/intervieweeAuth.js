@@ -37,25 +37,31 @@ router.get(
     approvalPrompt: "force",
   }),
   (req, res) => {
-    console.log(req);
+    // console.log(req);
     // var token = req.user.token;
     res.redirect("http://localhost:3000/");
+    // res.redirect("http://localhost:3000?login=success");
   }
 );
 
 // Success
 router.get("/login/success",async (req, res) => {
+  console.log("/login/success: ",req.user)
   if (req.user) {
     res.json({
       message: "User Authenticated",
       user: req.user,
     });
-  } else
-    res.status(400).json({
+    console.log("intervieweeAUth if req.user: ");
+  } 
+  else{
+    res.status(401).json({
       message: "User Not Authenticated",
       user: null,
     });
-  console.log(req.user);
+  // res.redirect("http://localhost:3000/login");
+  console.log("intervieweeAUth else req.user: ",req.user);
+  }
 });
 router.get(
   "/profile",
@@ -68,7 +74,7 @@ router.get("/login/failure", (req, res) => {
   res.send("Error");
 });
 router.get("/check-login-status", (req, res) => {
-  const isLoggedIn = !!req.user;
+  const isLoggedIn = req.user;
   res.json({ isLoggedIn });
 });
 router.get("/logout", (req, res) => {

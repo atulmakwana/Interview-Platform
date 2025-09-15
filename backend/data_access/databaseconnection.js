@@ -6,7 +6,7 @@ const connectToMongo= async () =>{
         //     useNewUrlParser: true,
         //     useUnifiedTopology: true,
         // })
-        const connectionInstance = await mongoose.connect(process.env.mongoURI,
+        const connectionInstance = await mongoose.connect(`${process.env.mongoURI}/InterviewPlatform`,
             {  
                 useNewUrlParser: true,
                 useUnifiedTopology: true,

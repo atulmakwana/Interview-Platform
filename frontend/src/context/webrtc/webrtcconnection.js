@@ -19,6 +19,7 @@ const Webrtcconnection = ({ children }) => {
   // const [room, setroom] = useState("");
   const [recivemessage, setrecivemessage] = useState("");
   let socket = useRef(null);
+  const mySocketIdRef = useRef(null);
   const myVideo = useRef(null);
   const userVideo = useRef(null);
   const connectionRef = useRef();
@@ -32,8 +33,11 @@ const Webrtcconnection = ({ children }) => {
     navigator.mediaDevices
       .getUserMedia({ video: video, audio: audio })
       .then((currentStream) => {
+        console.log("MyVideooo: ",myVideo)
         setStream(currentStream);
-        myVideo.current.srcObject = currentStream;
+        if (myVideo.current) {
+          myVideo.current.srcObject = currentStream;
+        }
       })
       .catch((ex) => {
         console.log(ex);
@@ -76,15 +80,18 @@ const Webrtcconnection = ({ children }) => {
         console.log("socket error", e);
         toast.error("Socket connection failed, try again later.");
       }
-      socket.current.on("me", (id) => setMe(id));
-      console.log(me);
+      socket.current.on("me", (id) => {
+        setMe(id);
+        mySocketIdRef.current = id;
+        console.log("on me: ", id);
+      });
       socket.current.on("callUser", ({ from, name, signal }) => {
         audio.play();
         name = JSON.parse(name);
         setCall({ isReceivingCall: true, from, name, signal });
       });
       socket.current.on("recieve_message", (data) => {
-        console.log(data);
+        console.log("on data: ",data);
         setrecivemessage(data.message);
       });
     };
@@ -98,31 +105,31 @@ const Webrtcconnection = ({ children }) => {
   }, [video])
 
   const callUser = (id) => {
-    const peer = new Peer({ initiator: true, trickle: false, stream });
-    const user = JSON.parse(localStorage.getItem("user"));
-    const calleruser = {
-      name: user.name,
-    };
-    console.log(calleruser);
+    if (!socket.current || !stream) {
+      console.warn("Socket or media stream not ready");
+      return;
+    }
     setOtherUser(id);
-    let localstream;
-    const peer1 = new Peer({ initiator: true, trickle: false, stream });
-    peer1.on("signal", (data) => {
+    const user = JSON.parse(sessionStorage.getItem("user")).user;
+    const calleruser = { name: user?.name || "Someone" };
+
+    const peer = new Peer({ initiator: true, trickle: false, stream });
+    peer.on("signal", (data) => {
       socket.current.emit("callUser", {
         userToCall: id,
         signalData: data,
-        from: me,
+        from: mySocketIdRef.current || socket.current.id,
         name: JSON.stringify(calleruser),
       });
     });
-    peer1.on("stream", (currentStream) => {
+    peer.on("stream", (currentStream) => {
       if (userVideo.current) {
         userVideo.current.srcObject = currentStream;
       }
     });
     socket.current.on("callAccepted", (signal) => {
       setCallAccepted(true);
-      peer1.signal(signal);
+      peer.signal(signal);
     });
     connectionRef.current = peer;
   };
@@ -152,7 +159,7 @@ const Webrtcconnection = ({ children }) => {
   //    })
   // }
   const sendMessage = () => {
-    console.log("runn");
+    console.log("runn sendMessage");
     socket.current.emit("send_message", { message, otherUser });
   };
   const leaveCall = () => {

@@ -19,7 +19,7 @@ function App() {
     <>
       <Notification />
       <div className="d-flex vh-100">
-        {localStorage.getItem("token") ? <Sidebar /> : <></>}
+        {sessionStorage.getItem("token") ? <Sidebar /> : <></>}
         <Routes>
           <Route path="/login" element={<Login />} />
           <Route path="/" element={(!callAccepted) ? <Home /> : <></>} />

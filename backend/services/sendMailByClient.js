@@ -4,10 +4,10 @@ const gmail = google.gmail('v1');
 const Interviewer=require('../models/Interviwer')
 
 async function sendMail({from,to,displayName,Message,Subject}){
-const   USER_EMAIL =from;
+const   USER_EMAIL = from;
 const   To_Email=to;
 const interviewer=await Interviewer.findOne({email:USER_EMAIL})
-console.log(interviewer);
+console.log("interviewer::",interviewer);
    // Create an OAuth2 client with the given credentials
 const oauth2Client = new OAuth2(
     process.env.CLIENT_ID,

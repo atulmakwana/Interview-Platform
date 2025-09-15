@@ -6,9 +6,9 @@ export const initSocket = async () => {
         reconnectionAttempts: Infinity,
         timeout: 10000,
         withCredentials: true,
-        transports: ['websocket'], // Forces WebSocket
+        transports: ['websocket','polling'], // Forces WebSocket
     };
-    return io('https://interviewplatformbackend.onrender.com', options);
+    return io('http://localhost:3006', options);
 };
 
 // import { io } from 'socket.io-client';

@@ -6,10 +6,16 @@ const router = express.Router();
 const sendEmail=require("../services/sendMailByClient")
 router.post("/send",fetchuser,async(req,res)=>{
     try {
-        const User=await Interviewer.findOne({email:req.body.from});
-         if(!User){
-            res.status(400).json("User With This Email is Doesn't Exists")
-         }
+
+        const User=await Interviewer.findOne({email:req.body.to});
+        console.log("USER:: ",User);
+        console.log(req.body);
+        if (!User) {
+            const err = new Error("Invalid email: User Not Exist");
+            err.statusCode = 404; // custom status
+            throw err;
+        }
+
         const newEmail=new Email({
             user:User._id,
             sender:req.body.from,
@@ -19,7 +25,7 @@ router.post("/send",fetchuser,async(req,res)=>{
             displayName:req.body.displayName,
             createdAt:Date.now()
         })
-        console.log("\n\n============",req.body.message,"\n\n=============")
+        console.log("\n\n============\n",req.body.message,"\n=============")
          const result=await  newEmail.save()  
          await sendEmail({from:req.body.from,to:req.body.to,displayName:req.body.displayName,Subject:req.body.subject,Message:req.body.message})
         res.status(201).json({"success":"succefully send"});

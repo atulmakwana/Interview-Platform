@@ -12,15 +12,16 @@ const InterviewPage = (props) => {
   } = useContext(Webrtccontext);
   const { id } = useParams();
   const call = () => {
+    // ensure media is active before calling
     videoOn();
-    console.log('jp',id);
+    if (!id) return;
     callUser(id);
   };
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
   useEffect(() => {
-    if (!localStorage.getItem("loggedIn")) {
+    if (!sessionStorage.getItem("loggedIn")) {
       navigate("/login", { replace: true });
     }
     async function checkLoginStatus() {

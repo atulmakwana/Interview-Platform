@@ -1,7 +1,7 @@
 const passport = require("passport");
 const GoogleStrategy = require("passport-google-oauth2").Strategy;
 const Interviewer = require("./models/Interviwer");
-const JWT_SECRET = "vatsalpatelapp";
+// const JWT_SECRET = "atulmakwana";
 var jwt = require("jsonwebtoken");
 passport.serializeUser((user, done) => {
   done(null, user);
@@ -24,9 +24,11 @@ passport.use(
         "https://www.googleapis.com/auth/gmail.readonly",
         "https://www.googleapis.com/auth/gmail.compose",
       ],
+      accessType: 'offline',       // <-- Needed to get refresh_token
+      prompt: 'consent',
     },
-    async function (request, accessToken, refreshToken, profile, done) {
-
+    async function (request, accessToken, refreshtoken, profile, done) {
+      console.log("refreshtoken: ",refreshtoken)
       try {
         // var userData = {
         //     name: profile.displayName,
@@ -37,7 +39,7 @@ passport.use(
             id: profile.id,
           },
         };
-        const AUTHTOKEN = jwt.sign(data, JWT_SECRET);
+        const AUTHTOKEN = jwt.sign(data, process.env.JWT_SECRET);
         const interviewer = await Interviewer.findOne({ googleId: profile.id });
         var userData = {
           user: interviewer,
@@ -50,13 +52,13 @@ passport.use(
         const newInterviewer = new Interviewer({
           googleId: profile.id,
           email: profile.emails[0].value,
-          refreshToken: refreshToken,
+          refreshToken: refreshtoken,
           name: profile.displayName,
           date: Date.now(),
         });
 
         const result = await newInterviewer.save();
-        console.log("interviewer");
+        console.log("interviewer: ",result);
         console.log(newInterviewer);
         const user = {
           user: newInterviewer,
@@ -64,7 +66,8 @@ passport.use(
         }
         return done(null, user);
         // return done(null, );
-      } catch (error) {
+      } 
+      catch (error) {
         return done(error);
       }
     }

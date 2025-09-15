@@ -17,9 +17,9 @@ const Sidebar = () => {
       const res = await request.json();
       console.log(res);
       console.log(res.success);
-      localStorage.removeItem("token");
-      localStorage.removeItem("user");
-      localStorage.removeItem("loggedIn");
+      sessionStorage.removeItem("token");
+      sessionStorage.removeItem("user");
+      sessionStorage.removeItem("loggedIn");
       window.open("http://localhost:3000/login", "_self");
     })();
   };
